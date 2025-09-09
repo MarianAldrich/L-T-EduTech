@@ -1,0 +1,35 @@
+// Define Pins
+const int fireSensorPin = 4; // GPIO4 connected to fire sensor OUT
+const int buzzerPin = 13;    // GPIO13 connected to buzzer +
+const int ledPin = 12;       // GPIO12 connected to LED +
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize pins
+  pinMode(fireSensorPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+
+  // Initially turn off buzzer and LED
+  digitalWrite(buzzerPin, LOW);
+  digitalWrite(ledPin, LOW);
+
+  Serial.println("Fire Detection System Initialized");
+}
+
+void loop() {
+  int fireState = digitalRead(fireSensorPin);
+
+  if (fireState == HIGH) {  // Fire detected
+    Serial.println("🔥 Fire Detected!");
+    digitalWrite(buzzerPin, HIGH); // Turn ON buzzer
+    digitalWrite(ledPin, HIGH);    // Turn ON LED
+  } else {
+    Serial.println("✅ No Fire");
+    digitalWrite(buzzerPin, LOW);  // Turn OFF buzzer
+    digitalWrite(ledPin, LOW);     // Turn OFF LED
+  }
+
+  delay(1000); // Check every 1 second
+}
