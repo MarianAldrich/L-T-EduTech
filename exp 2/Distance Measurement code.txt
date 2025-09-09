@@ -1,0 +1,55 @@
+from machine import Pin, time_pulse_us
+import time
+# Define pins
+TRIG = Pin(15, Pin.OUT)
+ECHO = Pin(14, Pin.IN)
+BUZZER = Pin(13, Pin.OUT)
+LED = Pin(12, Pin.OUT)
+
+# Threshold distance in cm
+DIST_THRESHOLD = 10
+
+def measure_distance():
+    # Send pulse
+    TRIG.low()
+    time.sleep_us(2)
+    TRIG.high()
+    time.sleep_us(10)
+    TRIG.low()
+    
+    # Measure echo time
+    try:
+        pulse_time = time_pulse_us(ECHO, 1, 30000)  # Timeout 30ms
+    except OSError as ex:
+        print("Timeout!")
+        return None
+    
+    # Calculate distance (speed of sound: 34300 cm/s)
+    distance = (pulse_time / 2) / 29.1
+    return distance
+
+def main():
+    print("Starting Distance Measurement System...")
+    while True:
+        distance = measure_distance()
+        
+        if distance is not None:
+            print("Distance: {:.2f} cm".format(distance))
+            
+            if distance < DIST_THRESHOLD:
+                print("Object Detected!")
+                BUZZER.high()
+                LED.high()
+            else:
+                BUZZER.low()
+                LED.low()
+        else:
+            print("Failed to read distance")
+            BUZZER.low()
+            LED.low()
+        
+        time.sleep(1)
+
+# Run the main function
+if __name__ == "__main__":
+    main()
