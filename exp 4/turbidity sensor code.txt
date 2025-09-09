@@ -1,0 +1,65 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// OLED display settings
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// Pin definitions
+const int turbidityPin = A0;   // Analog input from turbidity sensor
+const int ledPin = D3;         // Digital output to LED (through resistor)
+
+// Threshold for turbidity alert
+const int turbidityThreshold = 400; // Adjust this based on calibration
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize the LED pin
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+  // Initialize the OLED
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    Serial.println("OLED initialization failed!");
+    while(true);
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0,0);
+  display.println("Water Quality Monitor");
+  display.display();
+  delay(2000);
+}
+
+void loop() {
+  // Read turbidity value from sensor
+  int turbidityValue = analogRead(turbidityPin);
+
+  // Display the turbidity value on OLED
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println("Turbidity Level:");
+  display.setTextSize(2);
+  display.setCursor(0,20);
+  display.print(turbidityValue);
+  display.setTextSize(1);
+
+  // Check if turbidity exceeds threshold
+  if(turbidityValue > turbidityThreshold) {
+    digitalWrite(ledPin, HIGH); // Turn on LED
+    display.setCursor(0,50);
+    display.println("ALERT! High Turbidity");
+  } else {
+    digitalWrite(ledPin, LOW); // Turn off LED
+    display.setCursor(0,50);
+    display.println("Water is OK");
+  }
+  
+  display.display();
+  delay(1000); // Update every 1 second
+}
