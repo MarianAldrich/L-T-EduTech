@@ -1,0 +1,78 @@
+#include <DHT.h>
+
+// Define Pins
+#define SOIL_MOISTURE_PIN A0
+#define DHT_PIN 4
+#define RAIN_SENSOR_PIN 5
+#define WATER_LEVEL_PIN 14
+#define WATER_FLOW_PIN 12
+#define RELAY_PIN 13
+
+// Define Constants
+#define SOIL_THRESHOLD 500    // Adjust based on soil calibration
+#define WATER_LEVEL_THRESHOLD 300  // Adjust based on tank level
+
+// Initialize DHT22
+#define DHTTYPE DHT22
+DHT dht(DHT_PIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize pins
+  pinMode(SOIL_MOISTURE_PIN, INPUT);
+  pinMode(RAIN_SENSOR_PIN, INPUT);
+  pinMode(WATER_LEVEL_PIN, INPUT);
+  pinMode(WATER_FLOW_PIN, INPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+
+  // Initialize DHT sensor
+  dht.begin();
+
+  // Initially turn off relay
+  digitalWrite(RELAY_PIN, LOW);
+
+  Serial.println("Automated Irrigation System Initialized");
+}
+
+void loop() {
+  // Read Soil Moisture
+  int soilMoisture = analogRead(SOIL_MOISTURE_PIN);
+
+  // Read Temperature and Humidity
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  // Read Rain Sensor
+  int rain = digitalRead(RAIN_SENSOR_PIN);
+
+  // Read Water Level
+  int waterLevel = analogRead(WATER_LEVEL_PIN);
+
+  // Read Water Flow Sensor (for monitoring only)
+  int waterFlow = pulseIn(WATER_FLOW_PIN, HIGH);
+
+  // Display readings
+  Serial.print("Soil Moisture: "); Serial.println(soilMoisture);
+  Serial.print("Temperature: "); Serial.println(temperature);
+  Serial.print("Humidity: "); Serial.println(humidity);
+  Serial.print("Rain Detected: "); Serial.println(rain ? "Yes" : "No");
+  Serial.print("Water Level: "); Serial.println(waterLevel);
+  Serial.print("Water Flow (pulse duration): "); Serial.println(waterFlow);
+
+  // Check conditions
+  bool soilDry = soilMoisture > SOIL_THRESHOLD;
+  bool enoughWater = waterLevel > WATER_LEVEL_THRESHOLD;
+  bool raining = rain == HIGH;
+
+  if (soilDry && enoughWater && !raining) {
+    Serial.println("Irrigation Started");
+    digitalWrite(RELAY_PIN, HIGH); // Turn ON solenoid valve
+  } else {
+    Serial.println("Irrigation Stopped");
+    digitalWrite(RELAY_PIN, LOW); // Turn OFF solenoid valve
+  }
+
+  // Wait before next reading
+  delay(5000);
+}
