@@ -1,0 +1,69 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_MPU6050 mpu;
+#define BUZZER_PIN 18   // connect buzzer + to GPIO18, - to GND
+void setup() {
+  Serial.begin(115200);
+
+  Wire.begin(21, 22); // SDA = 21, SCL = 22 (ESP32 default)
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    Serial.println("OLED not found!");
+    for (;;);
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  if (!mpu.begin()) {
+    Serial.println("MPU6050 not found!");
+    while (1) delay(10);
+  }
+  Serial.println("MPU6050 ready!");
+
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  pinMode(BUZZER_PIN, OUTPUT);
+}
+
+void loop() {
+ 
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  float x = a.acceleration.x;
+  float y = a.acceleration.y;
+  float z = a.acceleration.z;
+
+ 
+  Serial.print("X: "); Serial.print(x);
+  Serial.print(" | Y: "); Serial.print(y);
+  Serial.print(" | Z: "); Serial.println(z);
+
+   display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Accel Data (m/s^2):");
+  display.print("X: "); display.println(x, 2);
+  display.print("Y: "); display.println(y, 2);
+  display.print("Z: "); display.println(z, 2);
+  display.display();
+
+ 
+  int freq = map(abs(y) * 100, 0, 2000, 200, 2000);  
+ 
+  if (abs(y) > 5) {  // only beep if tilt is noticeable
+    tone(BUZZER_PIN, freq, 100); // play tone for 100ms
+  } else {
+    noTone(BUZZER_PIN); // stop buzzer
+  }
+
+  delay(150); // control update speed
+}
